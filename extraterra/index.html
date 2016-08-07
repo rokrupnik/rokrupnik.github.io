@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - collada - blender</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #000000;
+				margin: 0px;
+				overflow: hidden;
+			}
+			
+			img#3dview {
+				position: absolute;
+				top: 10px;
+				width: 20vw;
+				height: 20vw;
+				z-index: 100;
+				/*display:block;*/
+			}
+		</style>
+	</head>
+
+	<body>
+		<img id="3dview" src="3dview.gif" style="position: absolute; width: 16%; margin-left: 42%; margin-top: 2%;"/>
+
+		<script src="three.js"></script>
+		<script src="Animation.js"></script>
+		<script src="AnimationHandler.js"></script>
+		<script src="KeyFrameAnimation.js"></script>
+
+		<script src="ColladaLoader.js"></script>
+
+		<script src="Detector.js"></script>
+		<script src="stats.min.js"></script>
+
+		<script>
+
+			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+
+			var INIT_COUNT = 300;
+			var TRAVEL_COUNT = 100;
+
+			var container, stats;
+
+			var camera, scene, renderer, objects;
+			var particleLight, pointLight;
+			var sun, sun2, ship, ship2;
+
+			var clock = new THREE.Clock();
+			var mixer;
+
+			var state, count, rotationY, dir, distance;
+
+			init();
+
+			// Collada models
+
+			var loader1 = new THREE.ColladaLoader();
+			var loader2 = new THREE.ColladaLoader();
+			var loader3 = new THREE.ColladaLoader();
+			var loader4 = new THREE.ColladaLoader();
+			loader1.options.convertUpAxis = true;
+			loader1.load( 'sonce1.dae', function ( collada ) {
+
+				sun = collada.scene;
+
+				sun.traverse( function ( child ) {
+
+					if ( child instanceof THREE.SkinnedMesh ) {
+
+						var animation = new THREE.Animation( child, child.geometry.animation );
+						animation.play();
+
+					}
+
+				} );
+
+				sun.scale.x = sun.scale.y = sun.scale.z = 0.01;
+				sun.position.x = -20;
+				sun.updateMatrix();
+
+				scene.add( sun );
+
+			} );
+			loader3.load( 'sonce1.dae', function ( collada ) {
+
+				sun2 = collada.scene;
+
+				sun2.traverse( function ( child ) {
+
+					if ( child instanceof THREE.SkinnedMesh ) {
+
+						var animation = new THREE.Animation( child, child.geometry.animation );
+						animation.play();
+
+					}
+
+				} );
+
+				sun2.scale.x = sun2.scale.y = sun2.scale.z = 0.01;
+				sun2.position.x = 140;
+				sun2.updateMatrix();
+
+				scene.add( sun2 );
+
+			} );
+
+			loader2.load( 'nebesno_telo.dae', function ( collada ) {
+
+				ship = collada.scene;
+
+				ship.traverse( function ( child ) {
+
+					if ( child instanceof THREE.SkinnedMesh ) {
+
+						var animation = new THREE.Animation( child, child.geometry.animation );
+						animation.play();
+
+					}
+
+				} );
+
+				ship.scale.x = ship.scale.y = ship.scale.z = 0.0005;
+				ship.position.x = 10;
+				ship.updateMatrix();
+
+				scene.add( ship );
+			} );
+
+			loader4.load( 'nebesno_telo_golo.dae', function ( collada ) {
+
+				ship2 = collada.scene;
+
+				ship2.traverse( function ( child ) {
+
+					if ( child instanceof THREE.SkinnedMesh ) {
+
+						var animation = new THREE.Animation( child, child.geometry.animation );
+						animation.play();
+
+					}
+
+				} );
+
+				ship2.scale.x = ship2.scale.y = ship2.scale.z = 0.0005;
+				ship2.position.x = 10;
+				ship2.updateMatrix();
+			} );
+
+			animate();
+
+			function init() {
+
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 1, 2000 );
+				camera.position.set( 25, 4, 13 );
+
+				scene = new THREE.Scene();
+				scene.fog = new THREE.FogExp2( 0x000000, 0.035 );
+
+				// Add Blender exported Collada model
+
+				mixer = new THREE.AnimationMixer( scene );
+
+				// Lights
+
+				scene.add( new THREE.AmbientLight( 0xffffff ) );
+
+				pointLight1 = new THREE.PointLight( 0xff4400, 20, 60 );
+				pointLight1.position.set( 0, 0, 0 );
+				scene.add( pointLight1 );
+				pointLight1 = new THREE.PointLight( 0xff4400, 20, 60 );
+				pointLight1.position.set( 120, 0, 0 );
+				scene.add( pointLight1 );
+
+				// Renderer
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				container.appendChild( renderer.domElement );
+
+				// Events
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+				state = 'fill';
+				count = 0;
+				rotationY = 0;
+				dir = 1;
+				distance = 0;
+			}
+
+			//
+
+			function onWindowResize( event ) {
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+			}
+
+			//
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				var delta = clock.getDelta();
+
+				// animate Collada model
+
+				THREE.AnimationHandler.update( delta );
+
+				mixer.update( delta );
+
+
+				render();
+
+			}
+
+			function render() {
+				var vx = 0;
+				var rx = 0;
+				count += 1;
+
+				switch (state) {
+					case 'fill': {
+						vx = 0;
+						rx = 0;
+						if (count > INIT_COUNT) {
+							state = 'travel';
+							count = 0;
+
+							scene.remove(ship);
+							scene.add(ship2);
+						}
+						break;
+					}
+					case 'travel': {
+						vx = 0.1;
+						distance += vx;
+						rx = 0;
+						if (distance > 100) {
+							state = 'turn';
+							distance = 0;
+						}
+						break;
+					}
+					case 'turn': {
+						vx = 0;
+						rx = 0.1;
+						rotationY += 0.1;
+						if (rotationY > Math.PI) {
+							ship.rotation.y = 0;
+							ship2.rotation.y = 0;
+							state = 'fill';
+							count = 0;
+							rotationY = 0;
+							dir *= -1;
+
+							scene.remove(ship2);
+							scene.add(ship);
+						}
+						break;
+					}
+				}
+
+
+				if (ship !== undefined) {
+					ship.position.x += (dir * vx);
+					ship.rotateY(rx);
+					ship2.position.x += (dir * vx);
+					ship2.rotateY(rx);
+				}
+				// changing view beetween the transition
+				if (distance < 40 || distance > 70) {
+					camera.position.x += (dir * vx);
+				}
+
+				var timer = Date.now() * 0.0005;
+
+				//camera.position.x = Math.cos( timer ) * 10;
+				//camera.position.y = 4;
+				//camera.position.z = Math.sin( timer ) * 10
+
+				if (ship !== undefined) {
+					camera.lookAt( ship.position );
+				} else if (ship2 !== undefined) {
+					camera.lookAt( ship2.position );
+				} else {
+					camera.lookAt( scene.position );
+				}
+
+				renderer.render( scene, camera );
+
+			}
+
+		</script>
+	</body>
+</html>
