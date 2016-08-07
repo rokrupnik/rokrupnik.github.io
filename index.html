@@ -1,308 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<title>three.js webgl - collada - blender</title>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-		<style>
-			body {
-				font-family: Monospace;
-				background-color: #000000;
-				margin: 0px;
-				overflow: hidden;
-			}
-			
-			img#3dview {
-				position: absolute;
-				top: 10px;
-				width: 20vw;
-				height: 20vw;
-				z-index: 100;
-				/*display:block;*/
-			}
-		</style>
-	</head>
-
-	<body>
-		<img id="3dview" src="3dview.gif" style="position: absolute; width: 16%; margin-left: 42%; margin-top: 2%;"/>
-
-		<script src="three.js"></script>
-		<script src="Animation.js"></script>
-		<script src="AnimationHandler.js"></script>
-		<script src="KeyFrameAnimation.js"></script>
-
-		<script src="ColladaLoader.js"></script>
-
-		<script src="Detector.js"></script>
-		<script src="stats.min.js"></script>
-
-		<script>
-
-			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
-
-			var INIT_COUNT = 300;
-			var TRAVEL_COUNT = 100;
-
-			var container, stats;
-
-			var camera, scene, renderer, objects;
-			var particleLight, pointLight;
-			var sun, sun2, ship, ship2;
-
-			var clock = new THREE.Clock();
-			var mixer;
-
-			var state, count, rotationY, dir, distance;
-
-			init();
-
-			// Collada models
-
-			var loader1 = new THREE.ColladaLoader();
-			var loader2 = new THREE.ColladaLoader();
-			var loader3 = new THREE.ColladaLoader();
-			var loader4 = new THREE.ColladaLoader();
-			loader1.options.convertUpAxis = true;
-			loader1.load( 'sonce1.dae', function ( collada ) {
-
-				sun = collada.scene;
-
-				sun.traverse( function ( child ) {
-
-					if ( child instanceof THREE.SkinnedMesh ) {
-
-						var animation = new THREE.Animation( child, child.geometry.animation );
-						animation.play();
-
-					}
-
-				} );
-
-				sun.scale.x = sun.scale.y = sun.scale.z = 0.01;
-				sun.position.x = -20;
-				sun.updateMatrix();
-
-				scene.add( sun );
-
-			} );
-			loader3.load( 'sonce1.dae', function ( collada ) {
-
-				sun2 = collada.scene;
-
-				sun2.traverse( function ( child ) {
-
-					if ( child instanceof THREE.SkinnedMesh ) {
-
-						var animation = new THREE.Animation( child, child.geometry.animation );
-						animation.play();
-
-					}
-
-				} );
-
-				sun2.scale.x = sun2.scale.y = sun2.scale.z = 0.01;
-				sun2.position.x = 140;
-				sun2.updateMatrix();
-
-				scene.add( sun2 );
-
-			} );
-
-			loader2.load( 'nebesno_telo.dae', function ( collada ) {
-
-				ship = collada.scene;
-
-				ship.traverse( function ( child ) {
-
-					if ( child instanceof THREE.SkinnedMesh ) {
-
-						var animation = new THREE.Animation( child, child.geometry.animation );
-						animation.play();
-
-					}
-
-				} );
-
-				ship.scale.x = ship.scale.y = ship.scale.z = 0.0005;
-				ship.position.x = 10;
-				ship.updateMatrix();
-
-				scene.add( ship );
-			} );
-
-			loader4.load( 'nebesno_telo_golo.dae', function ( collada ) {
-
-				ship2 = collada.scene;
-
-				ship2.traverse( function ( child ) {
-
-					if ( child instanceof THREE.SkinnedMesh ) {
-
-						var animation = new THREE.Animation( child, child.geometry.animation );
-						animation.play();
-
-					}
-
-				} );
-
-				ship2.scale.x = ship2.scale.y = ship2.scale.z = 0.0005;
-				ship2.position.x = 10;
-				ship2.updateMatrix();
-			} );
-
-			animate();
-
-			function init() {
-
-				container = document.createElement( 'div' );
-				document.body.appendChild( container );
-
-				camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 1, 2000 );
-				camera.position.set( 25, 4, 13 );
-
-				scene = new THREE.Scene();
-				scene.fog = new THREE.FogExp2( 0x000000, 0.035 );
-
-				// Add Blender exported Collada model
-
-				mixer = new THREE.AnimationMixer( scene );
-
-				// Lights
-
-				scene.add( new THREE.AmbientLight( 0xffffff ) );
-
-				pointLight1 = new THREE.PointLight( 0xff4400, 20, 60 );
-				pointLight1.position.set( 0, 0, 0 );
-				scene.add( pointLight1 );
-				pointLight1 = new THREE.PointLight( 0xff4400, 20, 60 );
-				pointLight1.position.set( 120, 0, 0 );
-				scene.add( pointLight1 );
-
-				// Renderer
-
-				renderer = new THREE.WebGLRenderer();
-				renderer.setPixelRatio( window.devicePixelRatio );
-				renderer.setSize( window.innerWidth, window.innerHeight );
-				container.appendChild( renderer.domElement );
-
-				// Events
-
-				window.addEventListener( 'resize', onWindowResize, false );
-
-				state = 'fill';
-				count = 0;
-				rotationY = 0;
-				dir = 1;
-				distance = 0;
-			}
-
-			//
-
-			function onWindowResize( event ) {
-
-				renderer.setSize( window.innerWidth, window.innerHeight );
-
-				camera.aspect = window.innerWidth / window.innerHeight;
-				camera.updateProjectionMatrix();
-
-			}
-
-			//
-
-			function animate() {
-
-				requestAnimationFrame( animate );
-
-				var delta = clock.getDelta();
-
-				// animate Collada model
-
-				THREE.AnimationHandler.update( delta );
-
-				mixer.update( delta );
-
-
-				render();
-
-			}
-
-			function render() {
-				var vx = 0;
-				var rx = 0;
-				count += 1;
-
-				switch (state) {
-					case 'fill': {
-						vx = 0;
-						rx = 0;
-						if (count > INIT_COUNT) {
-							state = 'travel';
-							count = 0;
-
-							scene.remove(ship);
-							scene.add(ship2);
-						}
-						break;
-					}
-					case 'travel': {
-						vx = 0.1;
-						distance += vx;
-						rx = 0;
-						if (distance > 100) {
-							state = 'turn';
-							distance = 0;
-						}
-						break;
-					}
-					case 'turn': {
-						vx = 0;
-						rx = 0.1;
-						rotationY += 0.1;
-						if (rotationY > Math.PI) {
-							ship.rotation.y = 0;
-							ship2.rotation.y = 0;
-							state = 'fill';
-							count = 0;
-							rotationY = 0;
-							dir *= -1;
-
-							scene.remove(ship2);
-							scene.add(ship);
-						}
-						break;
-					}
-				}
-
-
-				if (ship !== undefined) {
-					ship.position.x += (dir * vx);
-					ship.rotateY(rx);
-					ship2.position.x += (dir * vx);
-					ship2.rotateY(rx);
-				}
-				// changing view beetween the transition
-				if (distance < 40 || distance > 70) {
-					camera.position.x += (dir * vx);
-				}
-
-				var timer = Date.now() * 0.0005;
-
-				//camera.position.x = Math.cos( timer ) * 10;
-				//camera.position.y = 4;
-				//camera.position.z = Math.sin( timer ) * 10
-
-				if (ship !== undefined) {
-					camera.lookAt( ship.position );
-				} else if (ship2 !== undefined) {
-					camera.lookAt( ship2.position );
-				} else {
-					camera.lookAt( scene.position );
-				}
-
-				renderer.render( scene, camera );
-
-			}
-
-		</script>
-	</body>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="assets/img/favicon.ico">
+
+    <title>Rok Rupnik</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="assets/css/bootstrap.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="assets/css/ionicons.min.css" rel="stylesheet">
+    <link href="assets/css/style.css" rel="stylesheet">
+
+
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="assets/js/ie10-viewport-bug-workaround.js"></script>
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+  <body>
+
+    <div id="h">
+      <div class="container centered">
+        <div class="row">
+          <div class="col-md-8 col-md-offset-2">
+            <h1>Hello, my name is <b>Rok Rupnik</b>.<br/>I develop web pages,<br/>GIS software and<br/>android mobile apps.</h1>
+          </div>
+        </div><!--/row-->
+
+        <div class="row mt">
+          <div class="col-sm-6">
+            <a href="mailto:rok7rupnik@gmail.com"><h2><i class="ion-email"></i></h2></a>
+          </div><!--/col-md-4-->
+
+          <div class="col-sm-6">
+            <a href="https://www.facebook.com/rok7rupnik"><h2><i class="ion-social-facebook"></i></h2></a>
+          </div><!--/col-md-4-->
+        
+        </div><!--/row-->
+      </div><!--/container-->
+    </div><!--H-->
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="assets/js/jquery.min.js"></script>
+    <script src="assets/js/bootstrap.min.js"></script>
+    <script src="assets/js/retina-1.1.0.js"></script>
+    <script src="assets/js/jquery.hoverdir.js"></script>
+    <script src="assets/js/jquery.hoverex.min.js"></script>
+    <script src="assets/js/jquery.prettyPhoto.js"></script>
+    <script src="assets/js/jquery.isotope.min.js"></script>
+    <script src="assets/js/custom.js"></script>
+
+
+    <script>
+// Portfolio
+(function($) {
+  "use strict";
+  var $container = $('.portfolio'),
+    $items = $container.find('.portfolio-item'),
+    portfolioLayout = 'fitRows';
+    
+    if( $container.hasClass('portfolio-centered') ) {
+      portfolioLayout = 'masonry';
+    }
+        
+    $container.isotope({
+      filter: '*',
+      animationEngine: 'best-available',
+      layoutMode: portfolioLayout,
+      animationOptions: {
+      duration: 750,
+      easing: 'linear',
+      queue: false
+    },
+    masonry: {
+    }
+    }, refreshWaypoints());
+    
+    function refreshWaypoints() {
+      setTimeout(function() {
+      }, 1000);   
+    }
+        
+    $('nav.portfolio-filter ul a').on('click', function() {
+        var selector = $(this).attr('data-filter');
+        $container.isotope({ filter: selector }, refreshWaypoints());
+        $('nav.portfolio-filter ul a').removeClass('active');
+        $(this).addClass('active');
+        return false;
+    });
+    
+    function getColumnNumber() { 
+      var winWidth = $(window).width(), 
+      columnNumber = 1;
+    
+      if (winWidth > 1200) {
+        columnNumber = 5;
+      } else if (winWidth > 950) {
+        columnNumber = 4;
+      } else if (winWidth > 600) {
+        columnNumber = 3;
+      } else if (winWidth > 400) {
+        columnNumber = 2;
+      } else if (winWidth > 250) {
+        columnNumber = 1;
+      }
+        return columnNumber;
+      }       
+      
+      function setColumns() {
+        var winWidth = $(window).width(), 
+        columnNumber = getColumnNumber(), 
+        itemWidth = Math.floor(winWidth / columnNumber);
+        
+        $container.find('.portfolio-item').each(function() { 
+          $(this).css( { 
+          width : itemWidth + 'px' 
+        });
+      });
+    }
+    
+    function setPortfolio() { 
+      setColumns();
+      $container.isotope('reLayout');
+    }
+      
+    $container.imagesLoaded(function () { 
+      setPortfolio();
+    });
+    
+    $(window).on('resize', function () { 
+    setPortfolio();          
+  });
+})(jQuery);
+</script>
+  </body>
 </html>
