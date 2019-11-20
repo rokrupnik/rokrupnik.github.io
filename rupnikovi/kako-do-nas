@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- CREDITS FOR CSS AND BASIC SOURCE CODE: http://bettermotherfuckingwebsite.com/ -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kako do Rupnikovih</title>
+  <style type="text/css">
+    body {
+      margin:40px auto;
+      max-width:650px;
+      line-height:1.6;
+      font-size:18px;
+      color:#444;
+      padding:0 10px
+    }
+    h1,h2,h3 {line-height:1.2}
+  </style>
+</head>
+
+<body>
+
+<header>
+<h1>Kako do Rupnikovih?</h1>
+<aside>Over the hills and far away :) (<a href="https://www.youtube.com/watch?v=Ee33FsDANk0" target="_blank">Led Zeppelin</a>)</aside>
+</header>
+
+<h2>Stara Oselica 67, 4225 Sovodenj (<a href="https://goo.gl/maps/Jouu8AR6Ly3yAGQK6" target="_blank">GMAPS</a>)</h2>
+<p>
+V grobem je to na koncu Poljanske doline v smeri proti Cerknem. Če vam navigacija ponudi več smeri, priporočamo pot cez Sovodenj.
+
+Opis zadnjega dela poti: takoj za vasjo Sovodenj (cca 200m), bodite pozorni, da boste pravočasno zavili desno v grapo, tabla je za hrib Ermanovec.
+Potem sledite glavni cesti, ki se cez čas dvigne desno v hrib, mimo dveh stanovanjskih hiš na kupu, ene večje kmetije in nato pridete do nas - imamo dva stolpna silosa in slike na hišah.
+Vhod je na zgornji strani hiše, parkirate lahko na dovozu ali na spodnjem dvoriscu.
+</p>
+
+</body>
+</html>
